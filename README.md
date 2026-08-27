@@ -12,6 +12,8 @@ rmcp is the small control plane that does that. You paste an mcp.json-style
 definition into a web UI, click Deploy, and get back a URL and a config snippet
 for your client. It handles the packaging, the credentials, and the transport.
 
+![The rmcp server list, showing servers grouped into folders with their deploy status and endpoints](docs/images/server-list.png)
+
 ```mermaid
 flowchart LR
     UI["Web UI<br/>(define + deploy)"] --> API["Control plane<br/>Hono + SQLite"]
@@ -71,6 +73,9 @@ Open <http://localhost:5173>.
 1. **Create a server.** Give it a name (`[a-z0-9-]`, up to 40 chars) and either
    an npm package + version (stdio) or an upstream URL (http). Declare each env
    var or header, marking the sensitive ones as `secret`.
+
+   ![The new-server form, defining an npm package with an environment variable marked secret](docs/images/server-editor.png)
+
 2. **Set the secrets** on the server's page. Values go into rmcp's local SQLite
    database, and are pushed to SSM Parameter Store only when you deploy to
    Lambda.
@@ -78,6 +83,9 @@ Open <http://localhost:5173>.
    MCP `initialize` handshake against the new endpoint, so a green deploy means
    the server actually answered.
 4. **Connect** — open Export and copy the snippet for your client.
+
+   ![A deployed server's page: endpoint URL, deploy steps, OAuth connector credentials, and a generated VS Code config snippet](docs/images/server-detail.png)
+
 
 Undeploy removes the compute but keeps your secrets. Deleting a server purges
 its secrets, and for servers with an AWS footprint, everything under
@@ -119,6 +127,11 @@ The local gateway listens on all interfaces, so other devices on your LAN can
 reach it. To expose it to the internet, put a reverse proxy in front — see
 [self-hosting](docs/self-hosting.md), which covers exactly that with Caddy and
 automatic TLS.
+
+The UI follows your system theme, with a manual light/dark/auto toggle in the
+header.
+
+![The server list in dark theme](docs/images/server-list-dark.png)
 
 ## Documentation
 

@@ -61,7 +61,7 @@ export default function App() {
       <header className="appbar">
         <div className="appbar-inner">
           <Link to="/" className="brand">rmcp</Link>
-          <span className="tagline">remote MCP servers on AWS Lambda</span>
+          <span className="tagline">remote MCP servers, local or on AWS Lambda</span>
           <nav className="appbar-nav">
             <button
               type="button"

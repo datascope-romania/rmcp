@@ -130,6 +130,11 @@ Secrets are separated from configuration throughout: a server's config records
 that a secret *exists* (`{kind: "secret", set: true}`) but never its value, which
 is why the API can return a full server record to the browser safely.
 
+![A server's Secrets section, showing a declared secret marked "set" with a write-only input — the stored value is never displayed](images/server-secrets.png)
+
+The UI reflects this: a secret is shown as **set** or not, and the input is
+write-only. There is no path — API or interface — that reads a value back out.
+
 ## Secret lifecycle
 
 | Action | Effect on secrets |

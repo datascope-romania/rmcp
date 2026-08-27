@@ -88,7 +88,7 @@ export default function ServerEditor() {
         </label>
         <label>Type
           <select value={type} onChange={(e) => setType(e.target.value as "stdio" | "http")}>
-            <option value="stdio">stdio (npm package run in Lambda)</option>
+            <option value="stdio">stdio (npm package, run behind the bridge)</option>
             <option value="http">http (proxy to a remote MCP server)</option>
           </select>
         </label>

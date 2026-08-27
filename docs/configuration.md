@@ -5,6 +5,8 @@
 Edited in the UI under **Settings**, stored as a single JSON row in the SQLite
 `settings` table, and readable at `GET /api/settings`.
 
+![The Settings page: AWS region and profile, local gateway port, public MCP base URL, and the OAuth redirect URI allowlist](images/settings.png)
+
 | Key | Default | What it does |
 |---|---|---|
 | `region` | `us-east-1` | AWS region for every Lambda-target operation. |
