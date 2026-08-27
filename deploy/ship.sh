@@ -7,10 +7,19 @@
 #   RMCP_DEST      install directory on the host  (default /opt/rmcp)
 #
 #   RMCP_HOST=deploy@mcp-box bash deploy/ship.sh
+#
+# Rather than exporting these every time, put them in an untracked `.env.deploy`
+# at the repo root; it is sourced automatically when present, and its values
+# take effect over anything already in the environment.
 set -euo pipefail
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-HOST="${RMCP_HOST:?set RMCP_HOST=user@host}"
+if [ -f .env.deploy ]; then
+  # shellcheck disable=SC1091
+  . ./.env.deploy
+fi
+
+HOST="${RMCP_HOST:?set RMCP_HOST=user@host, or put it in .env.deploy}"
 KEY="${RMCP_SSH_KEY:-$HOME/.ssh/id_ed25519}"
 DEST="${RMCP_DEST:-/opt/rmcp}"
 

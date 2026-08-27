@@ -10,6 +10,9 @@ dist/
 *.db-wal
 *.db-journal
 
+# host-specific deploy config (see deploy/ship.sh)
+.env.deploy
+
 # local agent/tooling state
 .remember/
 .superpowers/
