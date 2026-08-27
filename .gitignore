@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.DS_Store
+.rmcp-staging/
+
+# rmcp's SQLite database holds secrets in plaintext — never commit it or its
+# WAL sidecars, which contain recently written rows.
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+
+# local agent/tooling state
+.remember/
+.superpowers/
+.playwright-mcp/
+.claude/

@@ -1,0 +1,26 @@
+# Install to /etc/systemd/system/rmcp.service.
+#
+# Set User= below to the account that owns the install directory (the same
+# account provision.sh chowned /opt/rmcp to). Adjust WorkingDirectory and
+# RMCP_DB_PATH together if you install somewhere other than /opt/rmcp.
+[Unit]
+Description=rmcp control plane (API + local MCP gateway)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=rmcp
+WorkingDirectory=/opt/rmcp
+Environment=NODE_ENV=production
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=RMCP_API_PORT=8787
+Environment=RMCP_DB_PATH=/opt/rmcp/apps/api/data/rmcp.db
+ExecStart=/opt/rmcp/node_modules/.bin/tsx apps/api/src/index.ts
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

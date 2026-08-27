@@ -1,0 +1,8 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+allowBuilds:
+  esbuild: true
+  better-sqlite3: true
+overrides:
+  "@smithy/types": 4.16.0

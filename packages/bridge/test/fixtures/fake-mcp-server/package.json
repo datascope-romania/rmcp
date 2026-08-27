@@ -1,0 +1,6 @@
+{
+  "name": "fake-mcp-server",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": { "fake-mcp-server": "./server.mjs" }
+}

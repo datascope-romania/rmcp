@@ -1,0 +1,62 @@
+# rmcp reverse proxy. Two vhosts: a public one that exposes only the MCP
+# endpoints, and a LAN-only one for the management UI.
+#
+# Substituted from the environment at load time (see docs/self-hosting.md):
+#   RMCP_PUBLIC_HOST      public hostname, e.g. mcp.example.com
+#   RMCP_LAN_ADDR         LAN bind address for the UI, e.g. 192.0.2.10:8080
+#   RMCP_ADMIN_USER       Basic Auth username for the UI
+#   RMCP_BASIC_AUTH_HASH  its bcrypt hash (`caddy hash-password`)
+#
+# Public: only /service/*, /oauth/* and /.well-known/oauth-* reach the local
+# MCP gateway; everything else 403.
+# The empty-matcher `handle` is the mutually-exclusive catch-all (a bare
+# `respond` would run for every request, including the proxied prefixes).
+{$RMCP_PUBLIC_HOST} {
+	handle_path /service/* {
+		request_body {
+			max_size 4MB
+		}
+		reverse_proxy 127.0.0.1:8788
+	}
+	# OAuth authorization server for the /service endpoints. Plain `handle`, not
+	# `handle_path`: these paths must reach the gateway with their prefix intact.
+	handle /oauth/* {
+		request_body {
+			max_size 16KB
+		}
+		reverse_proxy 127.0.0.1:8788
+	}
+	handle /.well-known/oauth-* {
+		request_body {
+			max_size 4KB
+		}
+		reverse_proxy 127.0.0.1:8788
+	}
+	handle {
+		respond 403
+	}
+}
+
+# LAN-only management UI + API, behind Basic Auth. Bound to a LAN address and a
+# non-forwarded port, so it is unreachable from the internet.
+#
+# The bcrypt hash is NOT committed here; supply it via a root-only systemd
+# drop-in at /etc/systemd/system/caddy.service.d/override.conf containing:
+#   [Service]
+#   Environment=RMCP_PUBLIC_HOST=mcp.example.com
+#   Environment=RMCP_LAN_ADDR=192.0.2.10:8080
+#   Environment=RMCP_ADMIN_USER=admin
+#   Environment=RMCP_BASIC_AUTH_HASH=<hash>
+http://{$RMCP_LAN_ADDR} {
+	basic_auth {
+		{$RMCP_ADMIN_USER} {$RMCP_BASIC_AUTH_HASH}
+	}
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8787
+	}
+	handle {
+		root * /opt/rmcp/apps/web/dist
+		try_files {path} /index.html
+		file_server
+	}
+}
