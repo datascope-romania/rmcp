@@ -31,7 +31,7 @@ rsync -az --delete \
   -e "ssh -i $KEY" \
   --exclude '.git' --exclude 'node_modules' --exclude 'apps/api/data' \
   --exclude '.claude' --exclude '.remember' --exclude '.superpowers' \
-  --exclude '.playwright-mcp' \
+  --exclude '.playwright-mcp' --exclude 'client_secret*.json' \
   ./ "$HOST:$DEST/"
 
 echo "==> install deps + build bridge on the host"

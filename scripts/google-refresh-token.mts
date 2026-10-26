@@ -1,11 +1,13 @@
 // One-time Google sign-in that yields a long-lived refresh token for an
 // http-proxy server's x-rmcp-oauth-* entries (see packages/bridge/src/httpProxy.ts).
 //
-//   GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=... pnpm google-token [--port 8765] [--scopes "a b"] [--verify <mcp url>]
+//   pnpm google-token --client-file client_secret_….json [--port 8765] [--scopes "a b"] [--verify <mcp url>]
+//   GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=... pnpm google-token [...]
 //
 // The OAuth client must allow the redirect URI http://localhost:<port>/callback.
 // The refresh token is bound to that client, so the proxy must use the same id/secret.
 import { createHash, randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { parseArgs } from "node:util";
 
@@ -20,15 +22,21 @@ const TOKEN_URL = "https://oauth2.googleapis.com/token";
 
 const { values: opts } = parseArgs({
   options: {
+    "client-file": { type: "string" },
     port: { type: "string", default: "8765" },
     scopes: { type: "string" },
     verify: { type: "string" },
   },
 });
-const clientId = process.env.GOOGLE_CLIENT_ID;
-const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+// the JSON Google Cloud Console downloads nests the client under "web" or "installed"
+const fileClient = opts["client-file"]
+  ? (({ web, installed }) => web ?? installed)(JSON.parse(readFileSync(opts["client-file"], "utf8"))) as
+    { client_id?: string; client_secret?: string } | undefined
+  : undefined;
+const clientId = fileClient?.client_id ?? process.env.GOOGLE_CLIENT_ID;
+const clientSecret = fileClient?.client_secret ?? process.env.GOOGLE_CLIENT_SECRET;
 if (!clientId || !clientSecret) {
-  console.error("Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (the same OAuth client the proxy will use).");
+  console.error("Pass --client-file, or set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (the same OAuth client the proxy will use).");
   process.exit(1);
 }
 const scopes = opts.scopes ? opts.scopes.split(/\s+/).filter(Boolean) : CHAT_SCOPES;
