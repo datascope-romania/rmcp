@@ -1,10 +1,11 @@
 // One-time Google sign-in that yields a long-lived refresh token for an
 // http-proxy server's x-rmcp-oauth-* entries (see packages/bridge/src/httpProxy.ts).
 //
-//   pnpm google-token --client-file client_secret_….json [--port 8765] [--scopes "a b"] [--verify <mcp url>]
+//   pnpm google-token --client-file client_secret_….json [--redirect-uri <uri>] [--scopes "a b"] [--verify <mcp url>]
 //   GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=... pnpm google-token [...]
 //
-// The OAuth client must allow the redirect URI http://localhost:<port>/callback.
+// The OAuth client must list --redirect-uri exactly (default http://localhost:8765/callback);
+// the script listens on that URI's port and path.
 // The refresh token is bound to that client, so the proxy must use the same id/secret.
 import { createHash, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -23,7 +24,7 @@ const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const { values: opts } = parseArgs({
   options: {
     "client-file": { type: "string" },
-    port: { type: "string", default: "8765" },
+    "redirect-uri": { type: "string", default: "http://localhost:8765/callback" },
     scopes: { type: "string" },
     verify: { type: "string" },
   },
@@ -40,7 +41,12 @@ if (!clientId || !clientSecret) {
   process.exit(1);
 }
 const scopes = opts.scopes ? opts.scopes.split(/\s+/).filter(Boolean) : CHAT_SCOPES;
-const redirectUri = `http://localhost:${opts.port}/callback`;
+const redirectUri = opts["redirect-uri"]!;
+const redirect = new URL(redirectUri);
+if (redirect.protocol !== "http:" || !["localhost", "127.0.0.1"].includes(redirect.hostname)) {
+  console.error(`--redirect-uri must be http://localhost or http://127.0.0.1, got ${redirectUri}`);
+  process.exit(1);
+}
 const state = randomBytes(16).toString("base64url");
 const verifier = randomBytes(32).toString("base64url");
 const challenge = createHash("sha256").update(verifier).digest("base64url");
@@ -63,7 +69,7 @@ authUrl.search = new URLSearchParams({
 const code = await new Promise<string>((resolve, reject) => {
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? "/", redirectUri);
-    if (url.pathname !== "/callback") { res.writeHead(404).end(); return; }
+    if (url.pathname !== redirect.pathname) { res.writeHead(404).end(); return; }
     const err = url.searchParams.get("error");
     const got = url.searchParams.get("code");
     const ok = !err && got && url.searchParams.get("state") === state;
@@ -72,7 +78,10 @@ const code = await new Promise<string>((resolve, reject) => {
     server.close();
     if (ok) resolve(got); else reject(new Error(`authorization failed: ${err ?? "state mismatch"}`));
   });
-  server.listen(Number(opts.port), "127.0.0.1", () => {
+  const port = Number(redirect.port || 80);
+  // macOS lets non-root bind privileged ports only on the wildcard address;
+  // the brief exposure is harmless because the code is useless without our PKCE verifier
+  server.listen(port, port < 1024 ? undefined : "127.0.0.1", () => {
     console.log(`Open this URL in your browser and sign in:\n\n${authUrl}\n`);
   });
 });
